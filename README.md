@@ -24,20 +24,6 @@ A comprehensive web application that transforms videos into interactive learning
 - **Downloadable summaries** in text format
 - **Automatic chunking** for large content to handle token limits
 
-### 🎯 Interactive Practice
-
-- **AI-generated MCQ questions** based on video content
-- **Instant feedback** with correct/incorrect highlighting
-- **Explanation system** for learning reinforcement
-- **Dynamic question generation** to avoid repetition
-
-### 🤖 AI Chatbot
-
-- **Web search integration** using LangChain
-- **Context-aware responses** based on video content
-- **Conversation history** management
-- **General knowledge queries** support
-
 ## 🏗️ Architecture
 
 ```
