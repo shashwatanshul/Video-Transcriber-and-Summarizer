@@ -92,6 +92,7 @@ def display_interactive_player_and_transcript(video):
                     display: flex;
                     flex-direction: row;
                     gap: 20px;
+                    width: 100%;
                 }}
                 .video-wrapper {{
                     flex: 1;
