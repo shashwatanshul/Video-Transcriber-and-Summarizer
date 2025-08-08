@@ -12,4 +12,4 @@ pydub==0.25.1
 requests==2.31.0
 beautifulsoup4==4.12.2
 pandas==1.5.3
-numpy==1.25.2 
+numpy==2.1.3
