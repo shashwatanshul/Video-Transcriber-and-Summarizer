@@ -1,5 +1,7 @@
 [server]
 maxUploadSize = 500
+runOnSave = false
+fileWatcherType = "none"
 
 [theme]
 primaryColor = "#FF6B6B"
