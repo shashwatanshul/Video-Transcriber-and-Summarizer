@@ -434,7 +434,7 @@ def display_interactive_player_and_transcript(video):
         # The key change: give the component a generous width so it fills the page on Cloud.
         # It won't overflow; the outer page limits it. We also kept the inside CSS responsive.
         with st.container():
-            st.subheader("🎬 Interactive Video Player & Transcript")
+            st.subheader("🎬 Interactive Video Player & AI Generated Transcript")
             components.html(
                 html_content,
                 height=520,
