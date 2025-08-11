@@ -40,8 +40,8 @@ def main():
     with col1:
         st.header("Welcome!")
         st.write("""
-        Transform your videos into interactive learning experiences with AI-powered transcription, 
-        summarization, and practice questions.
+        Transform your videos into interactive learning experiences with AI-powered transcription and
+        summarization.
         
         **Features:**
         - 📝 **Accurate Transcription** with timestamps
