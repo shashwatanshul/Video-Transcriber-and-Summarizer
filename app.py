@@ -8,6 +8,7 @@ from ai_services import AIServices
 
 # Import PyTorch compatibility fix
 import utils
+# Ensure environment fixes are applied as early as possible for native libs
 
 # Page configuration
 st.set_page_config(

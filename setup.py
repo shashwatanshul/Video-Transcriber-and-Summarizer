@@ -109,9 +109,12 @@ def run_tests():
     print("\n🧪 Running basic tests...")
     
     try:
-        # Test imports
+        # Test imports (either faster-whisper or openai-whisper is acceptable)
         import streamlit
-        import whisper
+        try:
+            import faster_whisper  # noqa: F401
+        except Exception:
+            import whisper  # noqa: F401
         import pymongo
         import boto3
         print("✅ All imports successful")
