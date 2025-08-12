@@ -1,32 +1,98 @@
-import whisper
+# Prefer faster-whisper if available; fall back to openai-whisper
+try:
+    from faster_whisper import WhisperModel as FasterWhisperModel  # type: ignore
+    _HAS_FASTER_WHISPER = True
+except Exception:
+    _HAS_FASTER_WHISPER = False
+
+try:
+    import whisper as OpenAIWhisper  # type: ignore
+    _HAS_OPENAI_WHISPER = True
+except Exception:
+    _HAS_OPENAI_WHISPER = False
 import tempfile
 import os
+import subprocess
+import glob
 from moviepy.editor import VideoFileClip
 import config
+import platform
+
+# Workaround for Windows OpenMP duplicate runtime (libiomp5md.dll) when mixing
+# faster-whisper/ctranslate2 and other libs (e.g., PyTorch/MKL).
+if platform.system().lower() == "windows":
+    os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 
 class TranscriptionService:
     def __init__(self):
         # Don't load model at initialization - load it lazily when needed
         self.model = None
-        
+        self.backend = None  # "faster-whisper" or "openai-whisper"
+
     def _load_model(self):
-        """Load Whisper model lazily when first needed"""
-        if self.model is None:
+        """Load a transcription model lazily when first needed.
+
+        Preference order:
+        1) faster-whisper (ctranslate2 backend) for speed
+        2) openai-whisper as fallback
+        """
+        if self.model is not None:
+            return self.model
+
+        # Try faster-whisper first for speed
+        if _HAS_FASTER_WHISPER:
             try:
-                self.model = whisper.load_model("base")
+                # Prefer CUDA only if clearly available (incl. cuDNN)
+                preferred_device = "cpu"
+                preferred_compute = "int8"
+                try:
+                    import torch  # type: ignore
+                    if torch.cuda.is_available():
+                        # Use CUDA only if cuDNN is available to avoid DLL errors on Windows
+                        if hasattr(torch.backends, "cudnn") and torch.backends.cudnn.is_available():
+                            preferred_device = "cuda"
+                            preferred_compute = "float16"
+                except Exception:
+                    # Torch not present or not usable; stick to CPU
+                    pass
+
+                try:
+                    self.model = FasterWhisperModel(
+                        "base", device=preferred_device, compute_type=preferred_compute
+                    )
+                except Exception as e:
+                    # If GPU attempt failed (e.g., missing cuDNN), retry on CPU
+                    print(f"faster-whisper init failed on device={preferred_device}: {e}. Retrying on CPU...")
+                    self.model = FasterWhisperModel("base", device="cpu", compute_type="int8")
+
+                self.backend = "faster-whisper"
+                return self.model
             except Exception as e:
-                print(f"Error loading Whisper model: {e}")
+                print(f"Error loading faster-whisper: {e}")
+
+        # Fallback to openai-whisper
+        if _HAS_OPENAI_WHISPER:
+            try:
+                self.model = OpenAIWhisper.load_model("base")
+                self.backend = "openai-whisper"
+                return self.model
+            except Exception as e:
+                print(f"Error loading OpenAI Whisper: {e}")
                 # Try to clear cache and retry
                 try:
                     import shutil
                     cache_dir = os.path.join(os.getenv('XDG_CACHE_HOME', os.path.expanduser('~/.cache')), 'whisper')
                     if os.path.exists(cache_dir):
                         shutil.rmtree(cache_dir)
-                    self.model = whisper.load_model("base")
+                    self.model = OpenAIWhisper.load_model("base")
+                    self.backend = "openai-whisper"
+                    return self.model
                 except Exception as e2:
-                    print(f"Failed to load Whisper model after cache clear: {e2}")
+                    print(f"Failed to load OpenAI Whisper after cache clear: {e2}")
                     raise e2
-        return self.model
+
+        # If neither backend is available, raise a clear error
+        raise RuntimeError("No transcription backend available. Install 'faster-whisper' or 'openai-whisper'.")
 
     def extract_audio_from_video(self, video_path):
         """Extract audio from video file"""
@@ -46,42 +112,128 @@ class TranscriptionService:
             raise Exception(f"Error extracting audio: {e}")
 
     def transcribe_video(self, video_path):
-        """Transcribe video with timestamps"""
+        """Transcribe video with timestamps using chunked processing for reliability."""
         try:
             # Load model when needed
             model = self._load_model()
-            
-            # Extract audio first
-            audio_path = self.extract_audio_from_video(video_path)
-            
+
+            # Split input video directly into audio chunks to avoid creating one giant WAV
+            chunk_seconds = 600  # 10 minutes per chunk keeps memory and time low on Streamlit Cloud
+            tmp_dir = tempfile.mkdtemp(prefix="vtas_chunks_")
+            chunk_pattern = os.path.join(tmp_dir, "chunk_%04d.wav")
+
+            chunks_created = []
             try:
-                # Transcribe with timestamps
-                result = model.transcribe(audio_path, word_timestamps=True)
-                
-                # Format transcript
-                formatted_transcript = self.format_transcript(result)
-                
-                return formatted_transcript
-                
+                self._ffmpeg_split_to_audio_chunks(video_path, chunk_seconds, chunk_pattern)
+                # Gather chunks sorted
+                chunks_created = sorted(glob.glob(os.path.join(tmp_dir, "chunk_*.wav")))
+
+                # If splitting failed or produced no chunks, fall back to single-audio extraction
+                if not chunks_created:
+                    audio_path = self.extract_audio_from_video(video_path)
+                    chunks_created = [audio_path]
+                    # When not using ffmpeg segmenter, offsets are zero and chunk_seconds unused
+                    chunk_seconds = None
+
+                # Transcribe each chunk and accumulate with offsets
+                all_segments = []
+                for index, chunk_path in enumerate(chunks_created):
+                    # Compute start offset in seconds for this chunk (only if we used segmenter)
+                    start_offset = (index * (chunk_seconds or 0))
+
+                    if self.backend == "faster-whisper":
+                        segments_iter, _info = model.transcribe(
+                            chunk_path,
+                            vad_filter=True,
+                            vad_parameters={"min_silence_duration_ms": 500},
+                        )
+                        for seg in segments_iter:
+                            all_segments.append({
+                                "start": (seg.start or 0) + start_offset,
+                                "end": (seg.end or 0) + start_offset,
+                                "text": seg.text,
+                            })
+                    else:
+                        result = model.transcribe(chunk_path, word_timestamps=False)
+                        for seg in result.get("segments", []):
+                            all_segments.append({
+                                "start": (seg.get("start") or 0) + start_offset,
+                                "end": (seg.get("end") or 0) + start_offset,
+                                "text": seg.get("text", ""),
+                            })
+
+                # Format and return transcript
+                return self.format_transcript(all_segments)
+
             finally:
-                # Clean up temporary audio file
-                if os.path.exists(audio_path):
-                    os.unlink(audio_path)
-                    
+                # Cleanup chunks and temp directory
+                try:
+                    for fp in chunks_created:
+                        if os.path.exists(fp):
+                            os.unlink(fp)
+                except Exception:
+                    pass
+                try:
+                    if os.path.isdir(tmp_dir):
+                        os.rmdir(tmp_dir)
+                except Exception:
+                    pass
+
         except Exception as e:
             raise Exception(f"Error transcribing video: {e}")
 
-    def format_transcript(self, result):
-        """Format transcript with timestamps"""
+    def _ffmpeg_split_to_audio_chunks(self, input_video_path: str, chunk_seconds: int, output_pattern: str) -> None:
+        """Use ffmpeg to split input media into mono 16kHz WAV chunks.
+
+        This avoids generating one huge intermediate file and keeps memory usage low.
+        """
+        # Example command:
+        # ffmpeg -hide_banner -loglevel error -i input.mp4 -vn -ac 1 -ar 16000 \
+        #   -f segment -segment_time 600 /tmp/chunks/chunk_%04d.wav
+        cmd = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-i",
+            input_video_path,
+            "-vn",
+            "-ac",
+            "1",
+            "-ar",
+            "16000",
+            "-f",
+            "segment",
+            "-segment_time",
+            str(chunk_seconds),
+            output_pattern,
+        ]
+        try:
+            subprocess.run(cmd, check=True)
+        except subprocess.CalledProcessError as e:
+            # Let caller decide on fallback
+            raise Exception(f"ffmpeg split failed: {e}")
+
+    def format_transcript(self, segments):
+        """Format transcript with timestamps.
+
+        Accepts a list of segment dicts/objects with start, end, and text.
+        """
         formatted_segments = []
-        
-        for segment in result['segments']:
-            start_time = self.format_time(segment['start'])
-            end_time = self.format_time(segment['end'])
-            text = segment['text'].strip()
-            
-            formatted_segments.append(f"[{start_time} - {end_time}] {text}")
-        
+
+        for segment in segments:
+            # Support both dict-style and attribute-style segments
+            start_val = segment.get("start") if isinstance(segment, dict) else getattr(segment, "start", 0)
+            end_val = segment.get("end") if isinstance(segment, dict) else getattr(segment, "end", 0)
+            text_val = segment.get("text") if isinstance(segment, dict) else getattr(segment, "text", "")
+
+            start_time = self.format_time(start_val)
+            end_time = self.format_time(end_val)
+            text = (text_val or "").strip()
+
+            if text:
+                formatted_segments.append(f"[{start_time} - {end_time}] {text}")
+
         return "\n".join(formatted_segments)
 
     def format_time(self, seconds):

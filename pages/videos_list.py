@@ -7,6 +7,7 @@ from s3_storage import S3Storage
 from transcription import TranscriptionService
 from ai_services import AIServices
 import config
+import time
 
 # Import PyTorch compatibility fix
 import utils
@@ -115,7 +116,7 @@ def upload_video():
                 
                 st.success(f"🎉 Video '{title}' has been uploaded and processed successfully!")
                 st.balloons()
-                
+                time.sleep(5)  # Pause to show success message
                 # Auto-refresh after 2 seconds
                 st.rerun()
                 
