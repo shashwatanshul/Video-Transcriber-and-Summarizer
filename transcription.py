@@ -12,6 +12,8 @@ except Exception:
     _HAS_OPENAI_WHISPER = False
 import tempfile
 import os
+import subprocess
+import glob
 from moviepy.editor import VideoFileClip
 import config
 import platform
@@ -110,47 +112,107 @@ class TranscriptionService:
             raise Exception(f"Error extracting audio: {e}")
 
     def transcribe_video(self, video_path):
-        """Transcribe video with timestamps"""
+        """Transcribe video with timestamps using chunked processing for reliability."""
         try:
             # Load model when needed
             model = self._load_model()
 
-            # Extract audio first
-            audio_path = self.extract_audio_from_video(video_path)
+            # Split input video directly into audio chunks to avoid creating one giant WAV
+            chunk_seconds = 600  # 10 minutes per chunk keeps memory and time low on Streamlit Cloud
+            tmp_dir = tempfile.mkdtemp(prefix="vtas_chunks_")
+            chunk_pattern = os.path.join(tmp_dir, "chunk_%04d.wav")
 
+            chunks_created = []
             try:
-                # Normalize to a list of segments with start, end, text
-                segments_list = []
+                self._ffmpeg_split_to_audio_chunks(video_path, chunk_seconds, chunk_pattern)
+                # Gather chunks sorted
+                chunks_created = sorted(glob.glob(os.path.join(tmp_dir, "chunk_*.wav")))
 
-                if self.backend == "faster-whisper":
-                    # Use VAD for faster processing and better segments
-                    segments_iter, _info = model.transcribe(
-                        audio_path,
-                        vad_filter=True,
-                        vad_parameters={"min_silence_duration_ms": 500},
-                    )
-                    for seg in segments_iter:
-                        segments_list.append({
-                            "start": seg.start,
-                            "end": seg.end,
-                            "text": seg.text,
-                        })
-                else:
-                    # OpenAI Whisper path
-                    result = model.transcribe(audio_path, word_timestamps=False)
-                    segments_list = result.get("segments", [])
+                # If splitting failed or produced no chunks, fall back to single-audio extraction
+                if not chunks_created:
+                    audio_path = self.extract_audio_from_video(video_path)
+                    chunks_created = [audio_path]
+                    # When not using ffmpeg segmenter, offsets are zero and chunk_seconds unused
+                    chunk_seconds = None
 
-                # Format transcript
-                formatted_transcript = self.format_transcript(segments_list)
-                return formatted_transcript
+                # Transcribe each chunk and accumulate with offsets
+                all_segments = []
+                for index, chunk_path in enumerate(chunks_created):
+                    # Compute start offset in seconds for this chunk (only if we used segmenter)
+                    start_offset = (index * (chunk_seconds or 0))
+
+                    if self.backend == "faster-whisper":
+                        segments_iter, _info = model.transcribe(
+                            chunk_path,
+                            vad_filter=True,
+                            vad_parameters={"min_silence_duration_ms": 500},
+                        )
+                        for seg in segments_iter:
+                            all_segments.append({
+                                "start": (seg.start or 0) + start_offset,
+                                "end": (seg.end or 0) + start_offset,
+                                "text": seg.text,
+                            })
+                    else:
+                        result = model.transcribe(chunk_path, word_timestamps=False)
+                        for seg in result.get("segments", []):
+                            all_segments.append({
+                                "start": (seg.get("start") or 0) + start_offset,
+                                "end": (seg.get("end") or 0) + start_offset,
+                                "text": seg.get("text", ""),
+                            })
+
+                # Format and return transcript
+                return self.format_transcript(all_segments)
 
             finally:
-                # Clean up temporary audio file
-                if os.path.exists(audio_path):
-                    os.unlink(audio_path)
+                # Cleanup chunks and temp directory
+                try:
+                    for fp in chunks_created:
+                        if os.path.exists(fp):
+                            os.unlink(fp)
+                except Exception:
+                    pass
+                try:
+                    if os.path.isdir(tmp_dir):
+                        os.rmdir(tmp_dir)
+                except Exception:
+                    pass
 
         except Exception as e:
             raise Exception(f"Error transcribing video: {e}")
+
+    def _ffmpeg_split_to_audio_chunks(self, input_video_path: str, chunk_seconds: int, output_pattern: str) -> None:
+        """Use ffmpeg to split input media into mono 16kHz WAV chunks.
+
+        This avoids generating one huge intermediate file and keeps memory usage low.
+        """
+        # Example command:
+        # ffmpeg -hide_banner -loglevel error -i input.mp4 -vn -ac 1 -ar 16000 \
+        #   -f segment -segment_time 600 /tmp/chunks/chunk_%04d.wav
+        cmd = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-i",
+            input_video_path,
+            "-vn",
+            "-ac",
+            "1",
+            "-ar",
+            "16000",
+            "-f",
+            "segment",
+            "-segment_time",
+            str(chunk_seconds),
+            output_pattern,
+        ]
+        try:
+            subprocess.run(cmd, check=True)
+        except subprocess.CalledProcessError as e:
+            # Let caller decide on fallback
+            raise Exception(f"ffmpeg split failed: {e}")
 
     def format_transcript(self, segments):
         """Format transcript with timestamps.
