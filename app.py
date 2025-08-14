@@ -53,6 +53,24 @@ def main():
         st.image("https://img.icons8.com/color/96/000000/video-playlist.png", width=100)
     
     st.markdown("---")
+
+    # Navigation
+    
+    st.subheader("🚀 Get Started")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("📋 View Videos List", use_container_width=True):
+            st.session_state.active_tab = 'video_list'
+            st.switch_page("pages/videos_list.py")
+    
+    with col2:
+        if st.button("➕ Upload New Video", use_container_width=True):
+            st.switch_page("pages/videos_list.py")
+    
+
+    st.markdown("---")
     
     # Quick stats
     try:
@@ -77,20 +95,7 @@ def main():
     except Exception as e:
         st.warning("Database connection issue. Please check your configuration.")
     
-    # Navigation
-    st.markdown("---")
-    st.subheader("🚀 Get Started")
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("📋 View Videos List", use_container_width=True):
-            st.session_state.active_tab = 'video_list'
-            st.switch_page("pages/videos_list.py")
-    
-    with col2:
-        if st.button("➕ Upload New Video", use_container_width=True):
-            st.switch_page("pages/videos_list.py")
     
     # Recent videos
     try:
