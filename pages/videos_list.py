@@ -195,23 +195,19 @@ def main():
 
     # Use st.radio to create controllable tabs, addressing st.tabs limitation
     tab_options = ["📤 Upload Video", "📺 Video List"]
-    
-    # Set the default tab based on navigation from the main page
-    default_index = 0
+
+    # Initialize or override tab selection based on navigation intent
     if st.session_state.get('active_tab') == 'video_list':
-        default_index = 1
-    
-    # Clean up the session state variable after reading it
-    if 'active_tab' in st.session_state:
+        st.session_state['videos_list_tab'] = "📺 Video List"
         del st.session_state['active_tab']
 
-    # Create the radio button styled as a tab bar
+    # Create the radio button styled as a tab bar with persistent state
     chosen_tab = st.radio(
         "Navigation",
         options=tab_options,
-        index=default_index,
         horizontal=True,
-        label_visibility="collapsed"
+        label_visibility="collapsed",
+        key="videos_list_tab",
     )
 
     # Display content based on the selected "tab"
