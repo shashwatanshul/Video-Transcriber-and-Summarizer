@@ -249,45 +249,42 @@ def display_rag_chat_tab(video):
         with st.spinner("Indexing video transcript for RAG vector search..."):
             services['rag'].index_transcript(video_id, transcript_doc['transcript'])
 
-    # Initialize chat history in session state for this video
+    # Initialize chat history in session state for this video (stores Q&A pairs)
     chat_key = f"rag_chat_history_{video_id}"
     if chat_key not in st.session_state:
         st.session_state[chat_key] = []
 
-    # Display chat history
-    for msg in st.session_state[chat_key]:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
-            if msg.get("sources"):
-                with st.expander("📍 Referenced Video Timestamps & Excerpts", expanded=False):
-                    for idx, src in enumerate(msg["sources"], 1):
-                        st.markdown(f"**[{src['start_time']} - {src['end_time']}]** — *{src['text']}*")
+    # Question Input at the top
+    with st.form(key=f"rag_input_form_{video_id}", clear_on_submit=True):
+        user_query = st.text_input(
+            "Ask anything from this video:",
+            placeholder="e.g., What was discussed about... ?",
+            key=f"input_{video_id}"
+        )
+        submit_btn = st.form_submit_button("Ask", type="primary")
 
-    # Question Input
-    if user_query := st.chat_input("Ask anything from this video (e.g., 'What was discussed about... ?')"):
-        # Append user message
-        st.session_state[chat_key].append({"role": "user", "content": user_query})
+    # Process question when submitted
+    if submit_btn and user_query and user_query.strip():
+        with st.spinner("Searching video transcript & generating answer..."):
+            rag_result = services['rag'].answer_question(user_query.strip(), video_id=video_id, top_k=4)
+            # Insert newest Q&A pair at the top (index 0)
+            st.session_state[chat_key].insert(0, {
+                "question": user_query.strip(),
+                "answer": rag_result["answer"],
+                "sources": rag_result.get("sources", [])
+            })
+        st.rerun()
+
+    # Display Q&A history with latest on top
+    for qa in st.session_state[chat_key]:
         with st.chat_message("user"):
-            st.markdown(user_query)
-
-        # Generate RAG response
+            st.markdown(qa["question"])
         with st.chat_message("assistant"):
-            with st.spinner("Searching video transcript & generating answer..."):
-                rag_result = services['rag'].answer_question(user_query, video_id=video_id, top_k=4)
-                answer_text = rag_result["answer"]
-                sources = rag_result.get("sources", [])
-
-                st.markdown(answer_text)
-                if sources:
-                    with st.expander("📍 Referenced Video Timestamps & Excerpts", expanded=False):
-                        for idx, src in enumerate(sources, 1):
-                            st.markdown(f"**[{src['start_time']} - {src['end_time']}]** — *{src['text']}*")
-
-                st.session_state[chat_key].append({
-                    "role": "assistant",
-                    "content": answer_text,
-                    "sources": sources
-                })
+            st.markdown(qa["answer"])
+            if qa.get("sources"):
+                with st.expander("📍 Referenced Video Timestamps & Excerpts", expanded=False):
+                    for idx, src in enumerate(qa["sources"], 1):
+                        st.markdown(f"**[{src['start_time']} - {src['end_time']}]** — *{src['text']}*")
 
 def main():
     video = get_video_data()
