@@ -6,6 +6,7 @@ from database import Database
 from s3_storage import S3Storage
 from transcription import TranscriptionService
 from ai_services import AIServices
+from rag_service import RAGService
 import config
 import time
 
@@ -27,7 +28,8 @@ def init_services():
         'db': Database(),
         's3': S3Storage(),
         'transcription': TranscriptionService(),
-        'ai': AIServices()
+        'ai': AIServices(),
+        'rag': RAGService()
     }
 
 services = init_services()
@@ -97,9 +99,17 @@ def upload_video():
                 # Save transcript
                 services['db'].save_transcript(video_id, transcript_result)
                 
+                # Build RAG vector embeddings index
+                status_text.text("Building RAG vector knowledge base...")
+                progress_bar.progress(85)
+                try:
+                    services['rag'].index_transcript(video_id, transcript_result)
+                except Exception as rag_err:
+                    print(f"RAG indexing warning: {rag_err}")
+
                 # Generate summary
                 status_text.text("Generating AI summary...")
-                progress_bar.progress(90)
+                progress_bar.progress(92)
                 
                 summary = services['ai'].generate_summary(transcript_result)
                 services['db'].save_summary(video_id, summary)

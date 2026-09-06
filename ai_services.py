@@ -13,7 +13,7 @@ class AIServices:
         if hasattr(config, 'GROQ_API_KEY') and config.GROQ_API_KEY:
             try:
                 self.groq_llm = ChatGroq(
-                    model="llama3-8b-8192",  # Fast and capable model
+                    model="openai/gpt-oss-20b",  # Fast, 131k context, active Groq model
                     temperature=0.7,
                     groq_api_key=config.GROQ_API_KEY
                 )
@@ -40,9 +40,9 @@ class AIServices:
             return False
             
         available_models = [
-            "llama3-8b-8192",    # Fast, good for general tasks
-            "llama3-70b-8192",   # High quality, slower
-            "gemma2-9b-it"       # Good balance
+            "openai/gpt-oss-20b",        # Fast, 131k context, great general performance
+            "openai/gpt-oss-120b",       # High quality large reasoning model
+            "qwen/qwen3.8-27b"           # 131k context Qwen model
         ]
         
         if model_name not in available_models:

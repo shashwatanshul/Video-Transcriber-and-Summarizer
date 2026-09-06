@@ -15,3 +15,5 @@ beautifulsoup4==4.12.2
 pandas
 numpy
 duckduckgo-search
+chromadb>=0.4.22
+fastembed>=0.2.0

@@ -5,6 +5,7 @@ import streamlit.components.v1 as components
 from database import Database
 from s3_storage import S3Storage
 from ai_services import AIServices
+from rag_service import RAGService
 from bson import ObjectId
 import utils
 
@@ -20,7 +21,8 @@ def init_services():
     return {
         'db': Database(),
         's3': S3Storage(),
-        'ai': AIServices()
+        'ai': AIServices(),
+        'rag': RAGService()
     }
 
 services = init_services()
@@ -217,11 +219,9 @@ def display_summary_tab(video):
         summary_doc = services['db'].get_summary(str(video['_id']))
         if summary_doc:
             summary = summary_doc['summary']
-            st.subheader("📋 AI-Generated Summary")
-            st.markdown("---")
             st.markdown(summary)
             st.download_button(
-                label="📥 Download as TXT",
+                label="📥 Download Summary as TXT",
                 data=summary,
                 file_name=f"{video['title']}_summary.txt",
                 mime="text/plain"
@@ -230,6 +230,64 @@ def display_summary_tab(video):
             st.warning("Summary not available for this video.")
     except Exception as e:
         st.error(f"Error loading summary: {e}")
+
+def display_rag_chat_tab(video):
+    video_id = str(video['_id'])
+    
+    st.subheader("💬 Ask Questions About This Video (RAG Search)")
+    st.caption("🔍 Retrieves exact timestamped transcript segments using local vector embeddings and generates grounded answers.")
+
+    # Check if indexed; if not, index on the fly
+    transcript_doc = services['db'].get_transcript(video_id)
+    if not transcript_doc:
+        st.warning("Transcript is required for RAG Q&A but is not yet available for this video.")
+        return
+
+    # Check if chunks exist in ChromaDB, index if missing
+    existing_chunks = services['rag'].retrieve("test", video_id=video_id, top_k=1)
+    if not existing_chunks:
+        with st.spinner("Indexing video transcript for RAG vector search..."):
+            services['rag'].index_transcript(video_id, transcript_doc['transcript'])
+
+    # Initialize chat history in session state for this video
+    chat_key = f"rag_chat_history_{video_id}"
+    if chat_key not in st.session_state:
+        st.session_state[chat_key] = []
+
+    # Display chat history
+    for msg in st.session_state[chat_key]:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+            if msg.get("sources"):
+                with st.expander("📍 Referenced Video Timestamps & Excerpts", expanded=False):
+                    for idx, src in enumerate(msg["sources"], 1):
+                        st.markdown(f"**[{src['start_time']} - {src['end_time']}]** — *{src['text']}*")
+
+    # Question Input
+    if user_query := st.chat_input("Ask anything from this video (e.g., 'What was discussed about... ?')"):
+        # Append user message
+        st.session_state[chat_key].append({"role": "user", "content": user_query})
+        with st.chat_message("user"):
+            st.markdown(user_query)
+
+        # Generate RAG response
+        with st.chat_message("assistant"):
+            with st.spinner("Searching video transcript & generating answer..."):
+                rag_result = services['rag'].answer_question(user_query, video_id=video_id, top_k=4)
+                answer_text = rag_result["answer"]
+                sources = rag_result.get("sources", [])
+
+                st.markdown(answer_text)
+                if sources:
+                    with st.expander("📍 Referenced Video Timestamps & Excerpts", expanded=False):
+                        for idx, src in enumerate(sources, 1):
+                            st.markdown(f"**[{src['start_time']} - {src['end_time']}]** — *{src['text']}*")
+
+                st.session_state[chat_key].append({
+                    "role": "assistant",
+                    "content": answer_text,
+                    "sources": sources
+                })
 
 def main():
     video = get_video_data()
@@ -243,7 +301,14 @@ def main():
     display_interactive_player_and_transcript(video)
 
     st.markdown("---")
-    display_summary_tab(video)
+    
+    tab1, tab2 = st.tabs(["💬 AI Video Q&A (RAG)", "📋 AI Summary"])
+    
+    with tab1:
+        display_rag_chat_tab(video)
+        
+    with tab2:
+        display_summary_tab(video)
 
 if __name__ == "__main__":
     main()
