@@ -1,6 +1,6 @@
 # Free LLM Alternatives for Video Summarization & MCQ Generation
 
-## 🚀 Groq - Recommended Free Alternative
+## Groq - Recommended Free Alternative
 
 ### Why Groq?
 
@@ -29,9 +29,9 @@
 
 | Model             | Speed      | Quality    | Best For                      |
 | ----------------- | ---------- | ---------- | ----------------------------- |
-| `llama3-8b-8192`  | ⚡⚡⚡⚡⚡ | ⭐⭐⭐⭐   | General tasks, fast responses |
-| `llama3-70b-8192` | ⚡⚡⚡     | ⭐⭐⭐⭐⭐ | High-quality summaries        |
-| `gemma2-9b-it`    | ⚡⚡⚡⚡   | ⭐⭐⭐⭐   | Balanced performance          |
+| `llama3-8b-8192`  | [Ultra Fast] | [4/5]   | General tasks, fast responses |
+| `llama3-70b-8192` | [Fast]     | [5/5] | High-quality summaries        |
+| `gemma2-9b-it`    | [Very Fast]   | [4/5]   | Balanced performance          |
 
 ### Model Availability Note:
 
@@ -41,7 +41,7 @@
 
 ---
 
-## 🔄 Other Free LLM Alternatives
+## Other Free LLM Alternatives
 
 ### 1. **Ollama (Local)**
 
@@ -85,19 +85,19 @@
 
 ---
 
-## 📊 Cost Comparison
+## Cost Comparison
 
 | Provider        | Free Tier      | Paid Starting     | Best For      |
 | --------------- | -------------- | ----------------- | ------------- |
-| **Groq**        | ✅ 100 req/min | $0.002/1M tokens  | Speed & cost  |
-| **OpenAI**      | ❌             | $0.0015/1M tokens | Quality       |
-| **Anthropic**   | ✅ Limited     | $0.003/1M tokens  | Reasoning     |
-| **Together AI** | ✅ Credits     | $0.0006/1M tokens | Model variety |
-| **Ollama**      | ✅ Unlimited   | $0                | Privacy       |
+| **Groq**        | [Yes] 100 req/min | $0.002/1M tokens  | Speed & cost  |
+| **OpenAI**      | [No]             | $0.0015/1M tokens | Quality       |
+| **Anthropic**   | [Yes] Limited     | $0.003/1M tokens  | Reasoning     |
+| **Together AI** | [Yes] Credits     | $0.0006/1M tokens | Model variety |
+| **Ollama**      | [Yes] Unlimited   | $0                | Privacy       |
 
 ---
 
-## 🛠️ Implementation in Your Project
+## Implementation in Your Project
 
 ### Current Setup:
 
@@ -141,7 +141,7 @@ ai_service.switch_groq_model("llama3-8b-8192")
 
 ---
 
-## 🎯 Recommendations
+## Recommendations
 
 ### For Your Video Project:
 
@@ -172,7 +172,7 @@ ai_service.switch_groq_model("llama3-8b-8192")
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues:
 
@@ -208,7 +208,7 @@ GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 ---
 
-## 📈 Performance Tips
+## Performance Tips
 
 ### For Summarization:
 
@@ -230,7 +230,7 @@ GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 ---
 
-## 🚀 Next Steps
+## Next Steps
 
 1. **Get Groq API Key**: [console.groq.com](https://console.groq.com)
 2. **Update your `.env` file** with the new key
@@ -238,4 +238,4 @@ GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 4. **Monitor performance and adjust models**
 5. **Enjoy faster, cheaper AI processing!**
 
-Your project is now optimized for cost-effective, high-performance AI processing with automatic fallback capabilities and up-to-date model support! 🎉
+Your project is now optimized for cost-effective, high-performance AI processing with automatic fallback capabilities and up-to-date model support! 

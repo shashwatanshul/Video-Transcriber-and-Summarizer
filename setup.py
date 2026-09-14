@@ -11,31 +11,31 @@ import platform
 def check_python_version():
     """Check if Python version is compatible"""
     if sys.version_info < (3, 8):
-        print("❌ Python 3.8 or higher is required")
+        print("[ERROR] Python 3.8 or higher is required")
         print(f"Current version: {sys.version}")
         return False
-    print(f"✅ Python {sys.version.split()[0]} detected")
+    print(f"[OK] Python {sys.version.split()[0]} detected")
     return True
 
 def install_requirements():
     """Install Python requirements"""
     try:
-        print("📦 Installing Python dependencies...")
+        print("Installing Python dependencies...")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
-        print("✅ Dependencies installed successfully")
+        print("[OK] Dependencies installed successfully")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"❌ Error installing dependencies: {e}")
+        print(f"[ERROR] Error installing dependencies: {e}")
         return False
 
 def check_ffmpeg():
     """Check if FFmpeg is installed"""
     try:
         subprocess.run(["ffmpeg", "-version"], capture_output=True, check=True)
-        print("✅ FFmpeg is installed")
+        print("[OK] FFmpeg is installed")
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
-        print("❌ FFmpeg is not installed")
+        print("[ERROR] FFmpeg is not installed")
         print("Please install FFmpeg:")
         
         system = platform.system().lower()
@@ -52,7 +52,7 @@ def check_ffmpeg():
 def create_env_file():
     """Create .env file from template"""
     if os.path.exists(".env"):
-        print("✅ .env file already exists")
+        print("[OK] .env file already exists")
         return True
     
     if os.path.exists("env_example.txt"):
@@ -63,23 +63,23 @@ def create_env_file():
             with open(".env", "w") as f:
                 f.write(content)
             
-            print("✅ Created .env file from template")
-            print("⚠️  Please edit .env file with your actual credentials")
+            print("[OK] Created .env file from template")
+            print("[WARN] Please edit .env file with your actual credentials")
             return True
         except Exception as e:
-            print(f"❌ Error creating .env file: {e}")
+            print(f"[ERROR] Error creating .env file: {e}")
             return False
     else:
-        print("❌ env_example.txt not found")
+        print("[ERROR] env_example.txt not found")
         return False
 
 def check_services():
     """Check if required services are configured"""
-    print("\n🔧 Service Configuration Check:")
+    print("\nService Configuration Check:")
     
     # Check if .env file exists
     if not os.path.exists(".env"):
-        print("❌ .env file not found")
+        print("[ERROR] .env file not found")
         return False
     
     # Load environment variables
@@ -97,16 +97,16 @@ def check_services():
     all_configured = True
     for service, value in services.items():
         if value and value != "your_aws_access_key_here":
-            print(f"✅ {service}: Configured")
+            print(f"[OK] {service}: Configured")
         else:
-            print(f"❌ {service}: Not configured")
+            print(f"[ERROR] {service}: Not configured")
             all_configured = False
     
     return all_configured
 
 def run_tests():
     """Run basic tests"""
-    print("\n🧪 Running basic tests...")
+    print("\nRunning basic tests...")
     
     try:
         # Test imports (either faster-whisper or openai-whisper is acceptable)
@@ -117,23 +117,23 @@ def run_tests():
             import whisper  # noqa: F401
         import pymongo
         import boto3
-        print("✅ All imports successful")
+        print("[OK] All imports successful")
         
         # Test configuration
         from config import MONGO_URI, AWS_ACCESS_KEY_ID, GROQ_API_KEY
-        print("✅ Configuration loaded")
+        print("[OK] Configuration loaded")
         
         return True
     except ImportError as e:
-        print(f"❌ Import error: {e}")
+        print(f"[ERROR] Import error: {e}")
         return False
     except Exception as e:
-        print(f"❌ Test error: {e}")
+        print(f"[ERROR] Test error: {e}")
         return False
 
 def main():
     """Main setup function"""
-    print("🎥 Video Transcriber & Summarizer Setup")
+    print("Video Transcriber & Summarizer Setup")
     print("=" * 50)
     
     # Check Python version
@@ -146,7 +146,7 @@ def main():
     
     # Check FFmpeg
     if not check_ffmpeg():
-        print("\n⚠️  Please install FFmpeg and run setup again")
+        print("\n[WARN] Please install FFmpeg and run setup again")
         sys.exit(1)
     
     # Create .env file
@@ -160,13 +160,13 @@ def main():
     
     print("\n" + "=" * 50)
     if services_ok and tests_ok:
-        print("🎉 Setup completed successfully!")
+        print("Setup completed successfully!")
         print("\nNext steps:")
         print("1. Edit .env file with your credentials")
         print("2. Set up MongoDB, AWS S3, and Groq accounts")
         print("3. Run: streamlit run main.py")
     else:
-        print("⚠️  Setup completed with warnings")
+        print("[WARN] Setup completed with warnings")
         print("\nPlease:")
         print("1. Configure missing services in .env file")
         print("2. Install FFmpeg if not already done")

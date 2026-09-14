@@ -1,23 +1,23 @@
-# 🚀 Deployment Guide
+# Deployment Guide
 
 This guide will help you deploy your Video Transcriber & Summarizer application for free or at minimal cost.
 
-## 🆓 Free Deployment Options
+## Free Deployment Options
 
 ### 1. Streamlit Cloud (Recommended)
 
 **Pros:**
 
-- ✅ Completely free
-- ✅ Easy deployment
-- ✅ Automatic updates
-- ✅ Custom domain support
+- [Yes] Completely free
+- [Yes] Easy deployment
+- [Yes] Automatic updates
+- [Yes] Custom domain support
 
 **Cons:**
 
-- ❌ Limited resources (1GB RAM)
-- ❌ No persistent storage
-- ❌ Sleep after inactivity
+- [No] Limited resources (1GB RAM)
+- [No] No persistent storage
+- [No] Sleep after inactivity
 
 #### Setup Steps:
 
@@ -65,14 +65,14 @@ This guide will help you deploy your Video Transcriber & Summarizer application 
 
 **Pros:**
 
-- ✅ Free tier available
-- ✅ More resources than Streamlit Cloud
-- ✅ Custom domains
+- [Yes] Free tier available
+- [Yes] More resources than Streamlit Cloud
+- [Yes] Custom domains
 
 **Cons:**
 
-- ❌ Sleeps after 15 minutes of inactivity
-- ❌ Slower cold starts
+- [No] Sleeps after 15 minutes of inactivity
+- [No] Slower cold starts
 
 #### Setup Steps:
 
@@ -98,16 +98,16 @@ This guide will help you deploy your Video Transcriber & Summarizer application 
 
 **Pros:**
 
-- ✅ $5/month after free tier
-- ✅ No sleep
-- ✅ Good performance
-- ✅ Easy deployment
+- [Yes] $5/month after free tier
+- [Yes] No sleep
+- [Yes] Good performance
+- [Yes] Easy deployment
 
 **Setup:**
 
 - Similar to Render but with better performance
 
-## 🔧 Required Services Setup
+## Required Services Setup
 
 ### MongoDB Atlas (Free Database)
 
@@ -179,7 +179,7 @@ This guide will help you deploy your Video Transcriber & Summarizer application 
 3. **Add to Environment**
    - Copy API key to environment variables
 
-## 📊 Cost Analysis
+## Cost Analysis
 
 ### Free Tier Limits
 
@@ -198,7 +198,7 @@ This guide will help you deploy your Video Transcriber & Summarizer application 
 | **50 videos**  | $0            | $1.15   | $2.50     | $3.65 |
 | **100 videos** | $0            | $2.30   | $5.00     | $7.30 |
 
-## 🚀 Production Deployment
+## Production Deployment
 
 ### AWS (Recommended for Production)
 
@@ -241,7 +241,7 @@ This guide will help you deploy your Video Transcriber & Summarizer application 
    - Alternative to S3
    - Better integration with GCP
 
-## 🔒 Security Considerations
+## Security Considerations
 
 ### Environment Variables
 
@@ -261,7 +261,7 @@ This guide will help you deploy your Video Transcriber & Summarizer application 
 - Set rate limits
 - Use API keys securely
 
-## 📈 Performance Optimization
+## Performance Optimization
 
 ### Caching
 
@@ -286,7 +286,7 @@ db.transcripts.createIndex({ video_id: 1 });
 - Reduce video loading times
 - Lower bandwidth costs
 
-## 🐛 Common Deployment Issues
+## Common Deployment Issues
 
 ### Memory Issues
 
@@ -310,7 +310,7 @@ st.set_option('server.maxUploadSize', 200)
 st.set_option('server.enableCORS', True)
 ```
 
-## 📞 Support
+## Support
 
 ### Deployment Help
 
