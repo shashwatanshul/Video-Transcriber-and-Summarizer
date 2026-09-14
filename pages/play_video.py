@@ -29,13 +29,31 @@ services = init_services()
 def get_video_data():
     video_id = st.session_state.get('selected_video_id')
     if not video_id:
-        st.error("No video selected. Please go back to the videos list.")
-        st.stop()
+        try:
+            videos = services['db'].get_all_videos()
+            if videos:
+                video_id = str(videos[0]['_id'])
+                st.session_state.selected_video_id = video_id
+            else:
+                st.info("No videos uploaded yet. Please upload your first video.")
+                if st.button("Go to Upload Page"):
+                    st.session_state.active_tab = 'upload'
+                    st.switch_page("pages/videos_list.py")
+                st.stop()
+        except Exception as e:
+            st.error(f"Error loading videos: {e}")
+            st.stop()
+
     try:
         video = services['db'].get_video_by_id(video_id)
         if not video:
-            st.error("Video not found.")
-            st.stop()
+            videos = services['db'].get_all_videos()
+            if videos:
+                video = videos[0]
+                st.session_state.selected_video_id = str(video['_id'])
+            else:
+                st.error("Video not found.")
+                st.stop()
         return video
     except Exception as e:
         st.error(f"Error loading video: {e}")
