@@ -254,26 +254,189 @@ def display_rag_chat_tab(video):
     if chat_key not in st.session_state:
         st.session_state[chat_key] = []
 
-    # Question Input at the top
+    # Fetch/cache 5 suggested follow-up questions for this video
+    suggestions_key = f"suggested_questions_{video_id}"
+    if suggestions_key not in st.session_state:
+        with st.spinner("Generating suggested questions from transcript..."):
+            st.session_state[suggestions_key] = services['rag'].generate_suggested_questions(transcript_doc['transcript'])
+
+    suggested_questions = st.session_state[suggestions_key]
+
+    # Pre-populate input if a suggested question was selected
+    selected_query_key = f"selected_rag_query_{video_id}"
+    initial_val = st.session_state.get(selected_query_key, "")
+
+    # Native Streamlit input form
     with st.form(key=f"rag_input_form_{video_id}", clear_on_submit=True):
         user_query = st.text_input(
             "Ask anything from this video:",
-            placeholder="e.g., What was discussed about... ?",
+            value=initial_val,
+            placeholder=suggested_questions[0],
             key=f"input_{video_id}"
         )
         submit_btn = st.form_submit_button("Ask", type="primary")
 
-    # Process question when submitted
+    # Clear pre-filled query once rendered
+    if selected_query_key in st.session_state:
+        st.session_state[selected_query_key] = ""
+
+    # Process submitted question directly in Python without iframe navigation
     if submit_btn and user_query and user_query.strip():
         with st.spinner("Searching video transcript & generating answer..."):
             rag_result = services['rag'].answer_question(user_query.strip(), video_id=video_id, top_k=4)
-            # Insert newest Q&A pair at the top (index 0)
             st.session_state[chat_key].insert(0, {
                 "question": user_query.strip(),
                 "answer": rag_result["answer"],
                 "sources": rag_result.get("sources", [])
             })
         st.rerun()
+
+    # Dynamic styling and script to attach on-focus popup suggestions & placeholder rotation to the native input
+    escaped_suggestions = json.dumps(suggested_questions)
+    helper_script = f"""
+    <script>
+        (function() {{
+            const questions = {escaped_suggestions};
+            const pDoc = window.parent.document;
+            let currentIdx = 0;
+            let charIdx = 0;
+            let isDeleting = false;
+            let typingSpeed = 40;
+
+            function initUI() {{
+                const inputs = pDoc.querySelectorAll('input[type="text"]');
+                let targetInput = null;
+                inputs.forEach(inp => {{
+                    const placeholder = inp.getAttribute('placeholder') || '';
+                    if (placeholder.includes("?") || placeholder.includes("What") || placeholder.includes("Ask") || inp.id.includes("input")) {{
+                        targetInput = inp;
+                    }}
+                }});
+
+                if (!targetInput && inputs.length > 0) {{
+                    targetInput = inputs[inputs.length - 1];
+                }}
+
+                if (!targetInput) return;
+
+                // Remove existing popup if re-rendering
+                let oldPopup = pDoc.getElementById('rag-focus-popup');
+                if (oldPopup) oldPopup.remove();
+
+                // Create custom styled popup menu in parent document
+                const popup = pDoc.createElement('div');
+                popup.id = 'rag-focus-popup';
+                popup.style.cssText = `
+                    display: none;
+                    position: absolute;
+                    background: #ffffff;
+                    border: 1px solid #d1d5db;
+                    border-radius: 8px;
+                    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1);
+                    z-index: 999999;
+                    overflow: hidden;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                `;
+
+                let html = `
+                    <div style="padding: 7px 14px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                        💡 Suggested Questions (Click to Autofill)
+                    </div>
+                `;
+                questions.slice(0, 4).forEach((q) => {{
+                    html += `
+                        <div class="rag-sug-row" data-val="${{q}}" style="padding: 9px 14px; font-size: 13.5px; color: #1f2937; cursor: pointer; border-bottom: 1px solid #f3f4f6; transition: background 0.15s;">
+                            ${{q}}
+                        </div>
+                    `;
+                }});
+                popup.innerHTML = html;
+                pDoc.body.appendChild(popup);
+
+                // Add hover style to rows
+                popup.querySelectorAll('.rag-sug-row').forEach(row => {{
+                    row.addEventListener('mouseenter', () => {{ row.style.background = '#eff6ff'; row.style.color = '#2563eb'; }});
+                    row.addEventListener('mouseleave', () => {{ row.style.background = '#ffffff'; row.style.color = '#1f2937'; }});
+                }});
+
+                function positionPopup() {{
+                    const rect = targetInput.getBoundingClientRect();
+                    popup.style.top = (rect.bottom + window.parent.scrollY + 4) + 'px';
+                    popup.style.left = (rect.left + window.parent.scrollX) + 'px';
+                    popup.style.width = rect.width + 'px';
+                }}
+
+                function showPopup() {{
+                    targetInput.placeholder = ""; // Disappear on focus
+                    positionPopup();
+                    popup.style.display = 'block';
+                }}
+
+                function hidePopup() {{
+                    popup.style.display = 'none';
+                }}
+
+                targetInput.addEventListener('focus', showPopup);
+                targetInput.addEventListener('click', showPopup);
+
+                // Autofill on clicking suggestion
+                popup.addEventListener('mousedown', function(e) {{
+                    const row = e.target.closest('.rag-sug-row');
+                    if (row) {{
+                        const val = row.getAttribute('data-val');
+                        // Use native setter so React/Streamlit detects the value change
+                        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+                        nativeInputValueSetter.call(targetInput, val);
+                        targetInput.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                        targetInput.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                        hidePopup();
+                        targetInput.focus();
+                    }}
+                }});
+
+                // Close popup when clicking outside
+                pDoc.addEventListener('mousedown', function(e) {{
+                    if (e.target !== targetInput && !popup.contains(e.target)) {{
+                        hidePopup();
+                    }}
+                }});
+
+                // Smooth rotating placeholder when not focused
+                function updatePlaceholder() {{
+                    if (pDoc.activeElement !== targetInput && (!targetInput.value || targetInput.value.trim() === "")) {{
+                        const currentText = questions[currentIdx % questions.length];
+                        if (isDeleting) {{
+                            targetInput.placeholder = currentText.substring(0, charIdx);
+                            charIdx--;
+                            if (charIdx < 0) {{
+                                isDeleting = false;
+                                currentIdx++;
+                                charIdx = 0;
+                                setTimeout(updatePlaceholder, 350);
+                                return;
+                            }}
+                        }} else {{
+                            targetInput.placeholder = currentText.substring(0, charIdx);
+                            charIdx++;
+                            if (charIdx > currentText.length) {{
+                                isDeleting = true;
+                                setTimeout(updatePlaceholder, 2500);
+                                return;
+                            }}
+                        }}
+                    }}
+                    setTimeout(updatePlaceholder, isDeleting ? 25 : typingSpeed);
+                }}
+
+                setTimeout(updatePlaceholder, 200);
+            }}
+
+            setTimeout(initUI, 150);
+            setTimeout(initUI, 600);
+        }})();
+    </script>
+    """
+    components.html(helper_script, height=0, width=0)
 
     # Display Q&A history with latest on top
     for qa in st.session_state[chat_key]:

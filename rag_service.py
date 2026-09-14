@@ -253,6 +253,45 @@ Answer:"""
                 "sources": sources
             }
 
+    def generate_suggested_questions(self, transcript_text: str) -> List[str]:
+        """Generate 4 concise, engaging suggested questions based on the video transcript."""
+        if not self.llm or not transcript_text:
+            return [
+                "What is the main topic of this video?",
+                "What are the key takeaways from this video?",
+                "Can you summarize the most important points?",
+                "What conclusion does the speaker reach?"
+            ]
+
+        sample_text = transcript_text[:4000]
+        prompt = f"""Based on the following video transcript excerpt, generate exactly 4 concise, specific, and interesting follow-up questions that a viewer might want to ask.
+
+Transcript:
+{sample_text}
+
+Instructions:
+- Return ONLY the 4 questions, one per line.
+- Do not include numbering, bullet points, or introductory text.
+- Make each question clear and under 15 words.
+"""
+        try:
+            response = self.llm.invoke(prompt)
+            lines = [line.strip().lstrip('1234567890.-*• ') for line in response.content.split('\n') if line.strip()]
+            questions = [q for q in lines if q and q.endswith('?')]
+            if len(questions) >= 4:
+                return questions[:4]
+            elif questions:
+                return questions
+        except Exception as e:
+            print(f"[RAG] Error generating suggested questions: {e}")
+
+        return [
+            "What is the main topic of this video?",
+            "What are the key takeaways from this video?",
+            "Can you summarize the most important points?",
+            "What conclusion does the speaker reach?"
+        ]
+
     def delete_video_index(self, video_id: str):
         """Remove all chunks associated with a video_id from the vector store."""
         try:

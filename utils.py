@@ -12,11 +12,11 @@ def fix_pytorch_streamlit_compatibility():
         import torch
         if hasattr(torch.classes, '__path__'):
             torch.classes.__path__ = []
-        print("✅ PyTorch/Streamlit compatibility fix applied")
+        print("[Utils] PyTorch/Streamlit compatibility fix applied")
     except ImportError:
-        print("ℹ️  PyTorch not installed, skipping compatibility fix")
+        print("[Utils] PyTorch not installed, skipping compatibility fix")
     except Exception as e:
-        print(f"⚠️  PyTorch compatibility fix failed: {e}")
+        print(f"[Utils] PyTorch compatibility fix failed: {e}")
 
 # Apply the fix when this module is imported
 fix_pytorch_streamlit_compatibility() 

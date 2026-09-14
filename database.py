@@ -22,12 +22,12 @@ class Database:
             self.transcripts = self.db.transcripts
             self.summaries = self.db.summaries
             self.mcqs = self.db.mcqs
-            print("✅ MongoDB connected successfully")
+            print("[DB] MongoDB connected successfully")
         except Exception as e:
-            print(f"❌ MongoDB connection failed: {e}")
-            print("💡 Please check your MONGO_URI in .env file")
-            print("💡 For local MongoDB: mongodb://localhost:27017/")
-            print("💡 For MongoDB Atlas: mongodb+srv://username:password@cluster.mongodb.net/")
+            print(f"[DB] MongoDB connection failed: {e}")
+            print("[DB] Please check your MONGO_URI in .env file")
+            print("[DB] For local MongoDB: mongodb://localhost:27017/")
+            print("[DB] For MongoDB Atlas: mongodb+srv://username:password@cluster.mongodb.net/")
             # Create a mock database for testing
             self.client = None
             self.db = None
