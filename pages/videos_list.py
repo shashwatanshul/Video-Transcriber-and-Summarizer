@@ -16,7 +16,6 @@ import utils
 # Page configuration
 st.set_page_config(
     page_title="Videos List - Video Transcriber",
-    page_icon="📋",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -36,7 +35,7 @@ services = init_services()
 
 def upload_video():
     """Handle video upload and processing"""
-    st.subheader("📤 Upload New Video")
+    st.subheader("Upload New Video")
     
     with st.form("upload_form"):
         title = st.text_input("Video Title", placeholder="Enter a descriptive title for your video")
@@ -122,16 +121,16 @@ def upload_video():
                     os.unlink(temp_path)
                 
                 progress_bar.progress(100)
-                status_text.text("✅ Video uploaded and processed successfully!")
+                status_text.text("Video uploaded and processed successfully!")
                 
-                st.success(f"🎉 Video '{title}' has been uploaded and processed successfully!")
+                st.success(f"Video '{title}' has been uploaded and processed successfully!")
                 st.balloons()
                 time.sleep(5)  # Pause to show success message
                 # Auto-refresh after 2 seconds
                 st.rerun()
                 
             except Exception as e:
-                st.error(f"❌ Error processing video: {str(e)}")
+                st.error(f"Error processing video: {str(e)}")
                 # Clean up temp file if it exists
                 if 'temp_path' in locals():
                     try:
@@ -141,19 +140,19 @@ def upload_video():
 
 def display_videos():
     """Display list of uploaded videos"""
-    st.subheader("📺 Your Videos")
+    st.subheader("Your Videos")
     
     try:
         videos = services['db'].get_all_videos()
         
         if not videos:
-            st.info("📝 No videos uploaded yet. Upload your first video above!")
+            st.info("No videos uploaded yet. Upload your first video above!")
             return
         
         # Search and filter
         col1, col2 = st.columns([3, 1])
         with col1:
-            search_term = st.text_input("🔍 Search videos", placeholder="Search by title...")
+            search_term = st.text_input("Search videos", placeholder="Search by title...")
         with col2:
             status_filter = st.selectbox("Status", ["All", "Uploaded", "Processed"])
         
@@ -176,39 +175,39 @@ def display_videos():
                 
                 with col1:
                     st.write(f"**{video['title']}**")
-                    st.caption(f"📅 Uploaded: {video['upload_date'].strftime('%Y-%m-%d %H:%M')}")
+                    st.caption(f"Uploaded: {video['upload_date'].strftime('%Y-%m-%d %H:%M')}")
                     if video.get('duration'):
-                        st.caption(f"⏱️ Duration: {int(video['duration']//60)}:{int(video['duration']%60):02d}")
+                        st.caption(f"Duration: {int(video['duration']//60)}:{int(video['duration']%60):02d}")
                 
                 with col2:
                     status = video.get('status', 'uploaded')
                     if status == 'processed':
-                        st.success("✅ Processed")
+                        st.success("Processed")
                     else:
-                        st.warning("⏳ Processing")
+                        st.warning("Processing")
                 
                 with col3:
-                    st.caption(f"📁 {video['filename']}")
+                    st.caption(f"{video['filename']}")
                 
                 with col4:
-                    if st.button("▶️ Play", key=f"play_{i}"):
+                    if st.button("Play", key=f"play_{i}"):
                         st.session_state.selected_video_id = str(video['_id'])
                         st.switch_page("pages/play_video.py")
                         
     except Exception as e:
-        st.error(f"❌ Error loading videos: {str(e)}")
-        st.info("📝 No videos available or database connection issue.")
+        st.error(f"Error loading videos: {str(e)}")
+        st.info("No videos available or database connection issue.")
 
 def main():
-    st.title("📋 Videos List")
+    st.title("Videos List")
     st.markdown("---")
 
     # Use st.radio to create controllable tabs, addressing st.tabs limitation
-    tab_options = ["📤 Upload Video", "📺 Video List"]
+    tab_options = ["Upload Video", "Video List"]
 
     # Initialize or override tab selection based on navigation intent
     if st.session_state.get('active_tab') == 'video_list':
-        st.session_state['videos_list_tab'] = "📺 Video List"
+        st.session_state['videos_list_tab'] = "Video List"
         del st.session_state['active_tab']
 
     # Create the radio button styled as a tab bar with persistent state
@@ -221,9 +220,9 @@ def main():
     )
 
     # Display content based on the selected "tab"
-    if chosen_tab == "📤 Upload Video":
+    if chosen_tab == "Upload Video":
         upload_video()
-    elif chosen_tab == "📺 Video List":
+    elif chosen_tab == "Video List":
         display_videos()
 
 

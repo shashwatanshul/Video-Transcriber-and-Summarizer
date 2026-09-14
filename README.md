@@ -1,30 +1,30 @@
-# 🎥 Video Transcriber & Summarizer
+# Video Transcriber & Summarizer
 
 A comprehensive web application that transforms videos into interactive learning experiences using AI-powered transcription, summarization, and practice questions.
 
-## ✨ Features
+## Features
 
-### 🎬 Video Management
+### Video Management
 
 - **Upload videos** with custom titles
 - **Video list** with search and filtering
 - **Cloud storage** using AWS S3
 - **Multiple video formats** support
 
-### 📝 AI-Powered Transcription
+### AI-Powered Transcription
 
 - **Accurate transcription** using OpenAI Whisper
 - **Timestamp synchronization** for easy navigation
 - **Real-time processing** with progress tracking
 
-### 📋 Intelligent Summarization
+### Intelligent Summarization
 
 - **Structured summaries** with headings and bullet points
 - **Key point extraction** from video content
 - **Downloadable summaries** in text format
 - **Automatic chunking** for large content to handle token limits
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 Frontend (Streamlit) → Backend Services → External APIs
@@ -34,7 +34,7 @@ Frontend (Streamlit) → Backend Services → External APIs
 └── Real-time Updates └── AI Services   └── Web Search
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -79,7 +79,7 @@ Frontend (Streamlit) → Backend Services → External APIs
 
    **Note**: The application is configured to support video uploads up to 500MB. This is set in `.streamlit/config.toml`.
 
-## ⚙️ Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -134,7 +134,7 @@ GROQ_API_KEY=your_groq_api_key_here
 2. Get API key from dashboard
 3. Free tier available with generous limits
 
-## 📱 Usage
+## Usage
 
 ### 1. Upload Video
 
@@ -162,7 +162,7 @@ GROQ_API_KEY=your_groq_api_key_here
 - Ask questions about the video or any topic
 - Get AI responses with web search capability
 
-## 🎯 Key Features Explained
+## Key Features Explained
 
 ### Multi-Page Navigation
 
@@ -184,7 +184,7 @@ GROQ_API_KEY=your_groq_api_key_here
 - **Practice System**: Dynamic MCQ generation with feedback
 - **Chat Interface**: Real-time AI conversations
 
-## 🚀 Deployment Options
+## Deployment Options
 
 ### Free Deployment
 
@@ -198,7 +198,7 @@ GROQ_API_KEY=your_groq_api_key_here
 - **Google Cloud**: Compute Engine + Cloud SQL
 - **Azure**: App Service + Cosmos DB
 
-## 💰 Cost Analysis
+## Cost Analysis
 
 ### Free Tier Usage
 
@@ -214,7 +214,7 @@ GROQ_API_KEY=your_groq_api_key_here
 - **Storage**: $2-10 (depending on video sizes)
 - **Total**: $2-10/month
 
-## 🔧 Customization
+## Customization
 
 ### Adding New Features
 
@@ -230,7 +230,7 @@ GROQ_API_KEY=your_groq_api_key_here
 - **CDN**: CloudFront for video delivery
 - **Database indexing**: Optimize queries
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -260,7 +260,7 @@ GROQ_API_KEY=your_groq_api_key_here
    - Monitor rate limits
    - Large content is automatically chunked to avoid token limits
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create feature branch
@@ -268,11 +268,11 @@ GROQ_API_KEY=your_groq_api_key_here
 4. Test thoroughly
 5. Submit pull request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **OpenAI** for Whisper transcription
 - **Groq** for fast LLM inference
@@ -280,7 +280,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - **LangChain** for AI agent capabilities
 - **MongoDB** for database solution
 
-## 📞 Support
+## Support
 
 For questions and support:
 
@@ -290,4 +290,4 @@ For questions and support:
 
 ---
 
-**Built with ❤️ using Streamlit, Groq, and modern AI technologies**
+**Built with passion using Streamlit, Groq, and modern AI technologies**

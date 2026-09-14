@@ -13,7 +13,6 @@ import utils
 # Page configuration
 st.set_page_config(
     page_title="Video Transcriber & Summarizer",
-    page_icon="🎥",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -32,7 +31,7 @@ services = init_services()
 
 # Main page
 def main():
-    st.title("🎥 Video Transcriber & Summarizer")
+    st.title("Video Transcriber & Summarizer")
     st.markdown("---")
     
     # Welcome section
@@ -45,8 +44,8 @@ def main():
         summarization.
         
         **Features:**
-        - 📝 **Accurate Transcription** with timestamps
-        - 📋 **AI-Generated Summaries** with structured format
+        - **Accurate Transcription** with timestamps
+        - **AI-Generated Summaries** with structured format
         """)
     
     with col2:
@@ -56,17 +55,17 @@ def main():
 
     # Navigation
     
-    st.subheader("🚀 Get Started")
+    st.subheader("Get Started")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        if st.button("📋 View Videos List", use_container_width=True):
+        if st.button("View Videos List", use_container_width=True):
             st.session_state.active_tab = 'video_list'
             st.switch_page("pages/videos_list.py")
     
     with col2:
-        if st.button("➕ Upload New Video", use_container_width=True):
+        if st.button("Upload New Video", use_container_width=True):
             st.switch_page("pages/videos_list.py")
     
 
@@ -75,7 +74,7 @@ def main():
     # Quick stats
     try:
         videos = services['db'].get_all_videos()
-        st.subheader("📊 Quick Stats")
+        st.subheader("Quick Stats")
         col1, col2, col3 = st.columns(3)
         
         with col1:
@@ -101,7 +100,7 @@ def main():
     try:
         if videos:
             st.markdown("---")
-            st.subheader("📺 Recent Videos")
+            st.subheader("Recent Videos")
             
             for i, video in enumerate(videos[:3]):
                 with st.container():
@@ -112,8 +111,7 @@ def main():
                         st.caption(f"Uploaded: {video['upload_date'].strftime('%Y-%m-%d %H:%M')}")
                     
                     with col2:
-                        status_color = "🟢" if video.get('status') == 'processed' else "🟡"
-                        st.write(f"{status_color} {video.get('status', 'uploaded').title()}")
+                        st.write(f"[{video.get('status', 'uploaded').title()}]")
                     
                     with col3:
                         if st.button(f"Play", key=f"play_{i}"):

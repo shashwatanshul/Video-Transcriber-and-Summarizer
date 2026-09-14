@@ -12,7 +12,6 @@ import utils
 # Page config first
 st.set_page_config(
     page_title="Play Video - Video Transcriber",
-    page_icon="▶️",
     layout="wide"
 )
 
@@ -203,7 +202,7 @@ def display_interactive_player_and_transcript(video):
         # The key change: give the component a generous width so it fills the page on Cloud.
         # It won't overflow; the outer page limits it. We also kept the inside CSS responsive.
         with st.container():
-            st.subheader("🎬 Interactive Video Player & AI Generated Transcript")
+            st.subheader("Interactive Video Player & AI Generated Transcript")
             components.html(
                 html_content,
                 height=520,
@@ -221,7 +220,7 @@ def display_summary_tab(video):
             summary = summary_doc['summary']
             st.markdown(summary)
             st.download_button(
-                label="📥 Download Summary as TXT",
+                label="Download Summary as TXT",
                 data=summary,
                 file_name=f"{video['title']}_summary.txt",
                 mime="text/plain"
@@ -234,8 +233,8 @@ def display_summary_tab(video):
 def display_rag_chat_tab(video):
     video_id = str(video['_id'])
     
-    st.subheader("💬 Ask Questions About This Video (RAG Search)")
-    st.caption("🔍 Retrieves exact timestamped transcript segments using local vector embeddings and generates grounded answers.")
+    st.subheader("Ask Questions About This Video (RAG Search)")
+    st.caption("Retrieves exact timestamped transcript segments using local vector embeddings and generates grounded answers.")
 
     # Check if indexed; if not, index on the fly
     transcript_doc = services['db'].get_transcript(video_id)
@@ -311,7 +310,7 @@ def display_rag_chat_tab(video):
 
                 let html = `
                     <div style="padding: 7px 14px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
-                        💡 Suggested Questions (Click to Autofill)
+                        Suggested Questions (Click to Autofill)
                     </div>
                 `;
                 questions.slice(0, 4).forEach((q) => {{
@@ -447,13 +446,13 @@ def display_rag_chat_tab(video):
                 with st.chat_message("assistant"):
                     st.markdown(qa["answer"])
                     if qa.get("sources"):
-                        with st.expander("📍 Referenced Video Timestamps & Excerpts", expanded=False):
+                        with st.expander("Referenced Video Timestamps & Excerpts", expanded=False):
                             for idx, src in enumerate(qa["sources"], 1):
                                 st.markdown(f"**[{src['start_time']} - {src['end_time']}]** — *{src['text']}*")
 
 def main():
     video = get_video_data()
-    st.title(f"▶️ {video['title']}")
+    st.title(f"{video['title']}")
     st.markdown("---")
 
     if st.button("← Back to Videos List"):
@@ -464,7 +463,7 @@ def main():
 
     st.markdown("---")
     
-    tab1, tab2 = st.tabs(["💬 AI Video Q&A (RAG)", "📋 AI Summary"])
+    tab1, tab2 = st.tabs(["AI Video Q&A (RAG)", "AI Summary"])
     
     with tab1:
         display_rag_chat_tab(video)

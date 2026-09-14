@@ -121,10 +121,10 @@ class AIServices:
 
             # [Engaging Title for the Video]
 
-            ## 🚀 Overview
+            ## Overview
             [Provide a brief, engaging overview of the video's content in one or two paragraphs.]
 
-            ## 📚 Topic 1: [Name of the First Topic]
+            ## Topic 1: [Name of the First Topic]
             **Key Points:**
             - [Point 1]
             - [Point 2]
@@ -133,7 +133,7 @@ class AIServices:
             - "[Direct quote or paraphrased example from the transcript]"
             - "[Another example]"
 
-            ## 📚 Topic 2: [Name of the Second Topic]
+            ## Topic 2: [Name of the Second Topic]
             **Key Points:**
             - [Point 1]
             - [Point 2]
@@ -144,7 +144,7 @@ class AIServices:
 
             *(...add more topics as needed...)*
 
-            ## 🏁 Conclusion
+            ## Conclusion
             [Summarize the main takeaways of the video and provide a concluding thought.]
             """
 
