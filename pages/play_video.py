@@ -262,35 +262,6 @@ def display_rag_chat_tab(video):
 
     suggested_questions = st.session_state[suggestions_key]
 
-    # Pre-populate input if a suggested question was selected
-    selected_query_key = f"selected_rag_query_{video_id}"
-    initial_val = st.session_state.get(selected_query_key, "")
-
-    # Native Streamlit input form
-    with st.form(key=f"rag_input_form_{video_id}", clear_on_submit=True):
-        user_query = st.text_input(
-            "Ask anything from this video:",
-            value=initial_val,
-            placeholder=suggested_questions[0],
-            key=f"input_{video_id}"
-        )
-        submit_btn = st.form_submit_button("Ask", type="primary")
-
-    # Clear pre-filled query once rendered
-    if selected_query_key in st.session_state:
-        st.session_state[selected_query_key] = ""
-
-    # Process submitted question directly in Python without iframe navigation
-    if submit_btn and user_query and user_query.strip():
-        with st.spinner("Searching video transcript & generating answer..."):
-            rag_result = services['rag'].answer_question(user_query.strip(), video_id=video_id, top_k=6)
-            st.session_state[chat_key].insert(0, {
-                "question": user_query.strip(),
-                "answer": rag_result["answer"],
-                "sources": rag_result.get("sources", [])
-            })
-        st.rerun()
-
     # Dynamic styling and script to attach on-focus popup suggestions & placeholder rotation to the native input
     escaped_suggestions = json.dumps(suggested_questions)
     helper_script = f"""
@@ -436,18 +407,49 @@ def display_rag_chat_tab(video):
         }})();
     </script>
     """
+
+    # Native Streamlit input form at the top
+    with st.form(key=f"rag_input_form_{video_id}", clear_on_submit=True):
+        user_query = st.text_input(
+            "Ask anything from this video:",
+            placeholder=suggested_questions[0],
+            key=f"input_{video_id}"
+        )
+        submit_btn = st.form_submit_button("Ask", type="primary")
+
+    # Helper script embedded cleanly without layout shifting
+    st.markdown(
+        f"""
+        <div style="display:none; height:0; width:0; overflow:hidden;">
+            {helper_script}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
     components.html(helper_script, height=0, width=0)
 
-    # Display Q&A history with latest on top
-    for qa in st.session_state[chat_key]:
-        with st.chat_message("user"):
-            st.markdown(qa["question"])
-        with st.chat_message("assistant"):
-            st.markdown(qa["answer"])
-            if qa.get("sources"):
-                with st.expander("📍 Referenced Video Timestamps & Excerpts", expanded=False):
-                    for idx, src in enumerate(qa["sources"], 1):
-                        st.markdown(f"**[{src['start_time']} - {src['end_time']}]** — *{src['text']}*")
+    # Process submitted question in-place directly into session history
+    if submit_btn and user_query and user_query.strip():
+        rag_result = services['rag'].answer_question(user_query.strip(), video_id=video_id, top_k=6)
+        st.session_state[chat_key].insert(0, {
+            "question": user_query.strip(),
+            "answer": rag_result["answer"],
+            "sources": rag_result.get("sources", [])
+        })
+
+    # Dedicated container for Q&A history below the input box
+    qa_container = st.container()
+    with qa_container:
+        if st.session_state[chat_key]:
+            for qa in st.session_state[chat_key]:
+                with st.chat_message("user"):
+                    st.markdown(qa["question"])
+                with st.chat_message("assistant"):
+                    st.markdown(qa["answer"])
+                    if qa.get("sources"):
+                        with st.expander("📍 Referenced Video Timestamps & Excerpts", expanded=False):
+                            for idx, src in enumerate(qa["sources"], 1):
+                                st.markdown(f"**[{src['start_time']} - {src['end_time']}]** — *{src['text']}*")
 
 def main():
     video = get_video_data()
