@@ -197,7 +197,7 @@ class RAGService:
         self, 
         query: str, 
         video_id: Optional[str] = None, 
-        top_k: int = 4
+        top_k: int = 6
     ) -> Dict[str, Any]:
         """
         RAG Q&A pipeline:
@@ -225,7 +225,7 @@ class RAGService:
             )
         context_str = "\n\n".join(context_blocks)
 
-        prompt = f"""You are an intelligent Video Assistant. Answer the user's question accurately based ONLY on the provided video transcript excerpts below.
+        prompt = f"""You are an intelligent Video Assistant. Answer the user's question accurately and helpfully based on the provided video transcript excerpts below.
 
 Video Transcript Excerpts:
 ---------------------
@@ -233,9 +233,10 @@ Video Transcript Excerpts:
 ---------------------
 
 Instructions:
-- Provide a clear, direct, and helpful answer.
-- Always cite the relevant timestamp range (e.g. `[02:15 - 02:45]`) when referencing specific facts or explanations from the video.
-- If the answer cannot be determined from the transcript excerpts, politely state that the video does not cover that specific detail.
+- Provide a clear, direct, and helpful answer grounded in the excerpts.
+- Cite the relevant timestamp range (e.g. `[02:15 - 02:45]`) when referencing specific facts, statements, or explanations from the video.
+- If the excerpts provide partial or related information, explain what the video mentions rather than outright refusing to answer.
+- Only state that the video does not cover the topic if the excerpts have no relevant connection at all.
 
 User Question: {query}
 
@@ -254,7 +255,7 @@ Answer:"""
             }
 
     def generate_suggested_questions(self, transcript_text: str) -> List[str]:
-        """Generate 4 concise, engaging suggested questions based on the video transcript."""
+        """Generate 4 concise suggested questions that are GUARANTEED to be answered in the video transcript."""
         if not self.llm or not transcript_text:
             return [
                 "What is the main topic of this video?",
@@ -263,17 +264,36 @@ Answer:"""
                 "What conclusion does the speaker reach?"
             ]
 
-        sample_text = transcript_text[:4000]
-        prompt = f"""Based on the following video transcript excerpt, generate exactly 4 concise, specific, and interesting follow-up questions that a viewer might want to ask.
+        # Use multiple spread-out segments of the transcript for holistic coverage
+        text_length = len(transcript_text)
+        if text_length > 6000:
+            sample_text = (
+                transcript_text[:2000] + 
+                "\n...\n" + 
+                transcript_text[text_length // 2 : text_length // 2 + 2000] + 
+                "\n...\n" + 
+                transcript_text[-2000:]
+            )
+        else:
+            sample_text = transcript_text
 
-Transcript:
+        prompt = f"""You are an AI assistant creating questions that viewers can ask about a video.
+Analyze the transcript below and generate exactly 4 specific questions that are DIRECTLY and EXPLICITLY answered in the provided transcript.
+
+CRITICAL RULES:
+1. Every question MUST have its direct answer clearly stated within the transcript below.
+2. DO NOT ask speculative, philosophical, or open-ended questions whose answers are NOT in the text (e.g., do NOT ask "How to maintain motivation when appreciation is absent?" unless the speaker explicitly provides that advice).
+3. Base each question on a concrete fact, concept, story, or statement made by the speaker.
+4. Output EXACTLY 4 questions, one per line.
+5. Do not include numbering, bullets, labels, or intro text.
+6. Keep each question under 15 words.
+
+Video Transcript:
+---------------------
 {sample_text}
+---------------------
 
-Instructions:
-- Return ONLY the 4 questions, one per line.
-- Do not include numbering, bullet points, or introductory text.
-- Make each question clear and under 15 words.
-"""
+Questions:"""
         try:
             response = self.llm.invoke(prompt)
             lines = [line.strip().lstrip('1234567890.-*• ') for line in response.content.split('\n') if line.strip()]

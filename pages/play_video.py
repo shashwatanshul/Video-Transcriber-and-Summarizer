@@ -283,7 +283,7 @@ def display_rag_chat_tab(video):
     # Process submitted question directly in Python without iframe navigation
     if submit_btn and user_query and user_query.strip():
         with st.spinner("Searching video transcript & generating answer..."):
-            rag_result = services['rag'].answer_question(user_query.strip(), video_id=video_id, top_k=4)
+            rag_result = services['rag'].answer_question(user_query.strip(), video_id=video_id, top_k=6)
             st.session_state[chat_key].insert(0, {
                 "question": user_query.strip(),
                 "answer": rag_result["answer"],
