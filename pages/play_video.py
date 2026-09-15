@@ -231,6 +231,7 @@ def display_interactive_player_and_transcript(video):
     except Exception as e:
         st.error(f"An error occurred: {e}")
 
+@st.fragment
 def display_summary_tab(video):
     try:
         summary_doc = services['db'].get_summary(str(video['_id']))
@@ -248,6 +249,7 @@ def display_summary_tab(video):
     except Exception as e:
         st.error(f"Error loading summary: {e}")
 
+@st.fragment
 def display_rag_chat_tab(video):
     video_id = str(video['_id'])
     
