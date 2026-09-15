@@ -309,6 +309,12 @@ def display_rag_chat_tab(video):
 
                 if (!targetInput) return;
 
+                // Disable browser native autocomplete/autofill dropdown
+                targetInput.setAttribute('autocomplete', 'off');
+                targetInput.setAttribute('autocorrect', 'off');
+                targetInput.setAttribute('autocapitalize', 'off');
+                targetInput.setAttribute('spellcheck', 'false');
+
                 // Remove existing popup if re-rendering
                 let oldPopup = pDoc.getElementById('rag-focus-popup');
                 if (oldPopup) oldPopup.remove();
