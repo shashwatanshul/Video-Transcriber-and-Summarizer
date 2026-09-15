@@ -231,6 +231,7 @@ def display_interactive_player_and_transcript(video):
     except Exception as e:
         st.error(f"An error occurred: {e}")
 
+@st.fragment
 def display_summary_tab(video):
     try:
         summary_doc = services['db'].get_summary(str(video['_id']))
@@ -248,6 +249,7 @@ def display_summary_tab(video):
     except Exception as e:
         st.error(f"Error loading summary: {e}")
 
+@st.fragment
 def display_rag_chat_tab(video):
     video_id = str(video['_id'])
     
@@ -306,6 +308,12 @@ def display_rag_chat_tab(video):
                 }}
 
                 if (!targetInput) return;
+
+                // Disable browser native autocomplete/autofill dropdown
+                targetInput.setAttribute('autocomplete', 'off');
+                targetInput.setAttribute('autocorrect', 'off');
+                targetInput.setAttribute('autocapitalize', 'off');
+                targetInput.setAttribute('spellcheck', 'false');
 
                 // Remove existing popup if re-rendering
                 let oldPopup = pDoc.getElementById('rag-focus-popup');
@@ -388,6 +396,13 @@ def display_rag_chat_tab(video):
                         hidePopup();
                     }}
                 }});
+
+                // Reposition popup on scroll so it always stays anchored below the input
+                window.parent.addEventListener('scroll', function() {{
+                    if (popup.style.display === 'block') {{
+                        positionPopup();
+                    }}
+                }}, true);
 
                 // Smooth rotating placeholder when not focused
                 function updatePlaceholder() {{
