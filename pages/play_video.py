@@ -397,6 +397,13 @@ def display_rag_chat_tab(video):
                     }}
                 }});
 
+                // Reposition popup on scroll so it always stays anchored below the input
+                window.parent.addEventListener('scroll', function() {{
+                    if (popup.style.display === 'block') {{
+                        positionPopup();
+                    }}
+                }}, true);
+
                 // Smooth rotating placeholder when not focused
                 function updatePlaceholder() {{
                     if (pDoc.activeElement !== targetInput && (!targetInput.value || targetInput.value.trim() === "")) {{
